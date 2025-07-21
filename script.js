@@ -1,11 +1,75 @@
-const task = (async ($) => {
-  let products = [];
-  let cart = [];
+/* eslint-disable */
+(($) => {
+  "use strict";
 
-  // Sayfa yapısını oluştur
-  const buildHTML = () => {
-    $("body").html(`
-      <style>
+  // Sınıf adları
+  const classes = {
+    style: "custom-style",
+    wrapper: "custom-wrapper",
+    container: "custom-container",
+    productCard: "product-card",
+    addToCartButton: "add-to-cart-btn",
+    viewDetailButton: "view-detail-btn",
+    cartModal: "cart-modal",
+    detailModal: "detail-modal",
+    overlay: "overlay",
+    popupMessage: "popup-message",
+    spinner: "spinner",
+    searchInput: "search-input",
+    viewCartBtn: "view-cart-btn",
+    removeItem: "remove-item",
+    clearCartBtn: "clear-cart-btn",
+    closeDetail: "close-detail",
+  };
+
+  // Seçiciler
+  const selectors = {
+    style: `.${classes.style}`,
+    wrapper: `.${classes.wrapper}`,
+    container: `.${classes.container}`,
+    productCard: `.${classes.productCard}`,
+    addToCartButton: `.${classes.addToCartButton}`,
+    viewDetailButton: `.${classes.viewDetailButton}`,
+    cartModal: `#${classes.cartModal}`,
+    detailModal: `#${classes.detailModal}`,
+    overlay: `#${classes.overlay}`,
+    popupMessage: `.${classes.popupMessage}`,
+    spinner: `.${classes.spinner}`,
+    searchInput: `#${classes.searchInput}`,
+    viewCartBtn: `#${classes.viewCartBtn}`,
+    removeItem: `.${classes.removeItem}`,
+    clearCartBtn: `#${classes.clearCartBtn}`,
+    closeDetail: `#${classes.closeDetail}`,
+    productList: "#productList",
+    searchBar: "#searchBar",
+    appendLocation: "body", // HTML buraya eklenecek
+  };
+
+  const self = {
+    products: [],
+    cart: [],
+  };
+
+  // Başlatıcı
+  self.init = async () => {
+    self.reset();
+    self.buildCSS();
+    self.buildHTML();
+    await self.fetchProducts();
+    self.renderProducts();
+    self.setEvents();
+  };
+
+  // Önceki öğeleri temizler
+  self.reset = () => {
+    $(selectors.style).remove();
+    $(selectors.wrapper).remove();
+    $(document).off(".eventListener");
+  };
+
+  // CSS stillerini ekler
+  self.buildCSS = () => {
+    const customStyle = `<style class="${classes.style}">
         :root {
           --mainBodyColor1: #a6c1ee;
           --mainBodyColor2: #fbc2eb;
@@ -25,7 +89,7 @@ const task = (async ($) => {
           text-align: center;
           margin-bottom: 20px;
         }
-        #searchBar {
+        ${selectors.searchBar} {
           text-align: center;
           margin-bottom: 20px;
           display: flex;
@@ -38,7 +102,7 @@ const task = (async ($) => {
           align-items: center;
           gap: 10px;
         }
-        #searchInput {
+        ${selectors.searchInput} {
           padding: 8px;
           width: 250px;
           font-size: 16px;
@@ -48,7 +112,7 @@ const task = (async ($) => {
         .icon {
           font-size: 20px;
         }
-        #viewCartBtn {
+        ${selectors.viewCartBtn} {
           font-size: 16px;
           cursor: pointer;
           background: var(--button-bg);
@@ -59,13 +123,13 @@ const task = (async ($) => {
           align-items: center;
           gap: 8px;
         }
-        #productList {
+        ${selectors.productList} {
           display: flex;
           flex-wrap: wrap;
           gap: 20px;
           justify-content: center;
         }
-        .product-card {
+        ${selectors.productCard} {
           background: var(--card-bg);
           border: 1px solid #ccc;
           border-radius: 8px;
@@ -75,11 +139,11 @@ const task = (async ($) => {
           box-shadow: 0 2px 6px rgba(0,0,0,0.1);
           transition: box-shadow 0.3s;
         }
-        .product-card:hover {
+        ${selectors.productCard}:hover {
           box-shadow: var(--card-hover-shadow);
           transform: scale(1.05);
         }
-        .product-card img {
+        ${selectors.productCard} img {
           width: 100%;
           height: 180px;
           object-fit: contain;
@@ -98,7 +162,7 @@ const task = (async ($) => {
           background: darkblue;
           transform: scale(1.05);
         }
-        #cartModal {
+        ${selectors.cartModal} {
           display: none;
           position: fixed;
           top: 100px;
@@ -125,7 +189,7 @@ const task = (async ($) => {
           height: 40px;
           object-fit: contain;
         }
-        .remove-item {
+        ${selectors.removeItem} {
           background: red;
           color: white;
           border: none;
@@ -138,7 +202,7 @@ const task = (async ($) => {
           font-weight: bold;
           text-align: right;
         }
-        #cartOverlay {
+        ${selectors.overlay} {
           display: none;
           position: fixed;
           top: 0;
@@ -148,7 +212,7 @@ const task = (async ($) => {
           background: rgba(0,0,0,0.1);
           z-index: 9998;
         }
-        .popup-message {
+        ${selectors.popupMessage} {
           position: fixed;
           top: 20px;
           right: 20px;
@@ -159,7 +223,7 @@ const task = (async ($) => {
           z-index: 99999;
           opacity: 0;
         }
-        .spinner {
+        ${selectors.spinner} {
           width: 40px;
           height: 40px;
           margin: 20px auto;
@@ -172,7 +236,7 @@ const task = (async ($) => {
           0% { transform: rotate(0); }
           100% { transform: rotate(360deg); }
         }
-        #detailModal {
+        ${selectors.detailModal} {
           display: none;
           position: fixed;
           top: 50%;
@@ -185,262 +249,189 @@ const task = (async ($) => {
           z-index: 10000;
           width: 300px;
         }
-        #detailOverlay {
-          display: none;
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0,0,0,0.5);
-          z-index: 9999;
-        }
-      </style>
-      <h1>🛒 Mini E-Commercial</h1>
+      </style>`;
+    $("head").append(customStyle);
+  };
+
+  // HTML yapısını oluşturur
+  self.buildHTML = () => {
+    const html = `<h1>🛒 Mini E-Commercial</h1>
       <div id="searchBar">
         <div class="input-group">
           <span class="icon">🔍</span>
-          <input type="text" id="searchInput" placeholder="Search a product..." />
+          <input type="text" id="${classes.searchInput}" placeholder="Search a product..." />
         </div>
-        <button id="viewCartBtn"><span class="icon">🧺</span>Products added to Cart</button>
+        <button id="${classes.viewCartBtn}"><span class="icon">🧺</span>Products added to Cart</button>
       </div>
       <div id="productList"></div>
-      <div id="cartOverlay"></div>
-      <div id="cartModal"></div>
-      <div id="detailOverlay"></div>
-      <div id="detailModal"></div>
-    `);
+      <div id="${classes.overlay}"></div>
+      <div id="${classes.cartModal}"></div>
+      <div id="${classes.overlay}"></div>
+      <div id="${classes.detailModal}"></div>`;
+    $(selectors.appendLocation).append(html);
+  };
+
+  // Ürünleri API'den çeker
+  self.fetchProducts = async () => {
+    $(selectors.productList).append(`<div class="${classes.spinner}"></div>`);
+    const data = await $.getJSON("https://fakestoreapi.com/products");
+    $(selectors.spinner).hide();
+    self.products = data;
+    self.cart = JSON.parse(localStorage.getItem("cart")) || [];
   };
 
   // Ürünleri filtreleyip sayfada görüntüleyen fonksiyon
-  const renderProducts = (filter = "") => {
-    // Önceki ürün kartlarını temizle
-    $("#productList").empty();
+  self.renderProducts = (filter = "") => {
+    $(selectors.productList).empty();
 
-    // Ürünleri filtrele: başlık, filtre metnini içeriyorsa eşleşir
-    const filtered = products.filter((product) =>
-      product.title.toLowerCase().includes(filter)
+    const filtered = self.products.filter((product) =>
+      product.title.toLowerCase().includes(filter.toLowerCase())
     );
 
-    // Filtreleme sonucu ürün bulunamazsa kullanıcıya mesaj göster
     if (filtered.length === 0) {
-      $("#productList").append("<p>Product not found.</p>");
-      return; // Fonksiyondan çık
+      $(selectors.productList).append("<p>Product not found.</p>");
+      return;
     }
 
-    // Filtrelenen her ürün için kart oluştur
     filtered.forEach((product) => {
-      const card = $(`
-      <div class="product-card" data-id="${
+      const card = `<div class="${classes.productCard}" data-id="${
         product.id
       }" data-title="${product.title.toLowerCase()}">
-        <img src="${product.image}" alt="${product.title}">
-        <h4>${product.title.slice(
-          0,
-          35
-        )}...</h4> <!-- Uzun başlıklar kısaltılıyor -->
-        <p><b>$${product.price}</b></p>
-        <button class="addToCart">Add to Cart</button> <!-- Sepete ekle butonu -->
-        <button class="viewDetail">Detail</button>     <!-- Ürün detayını gösteren buton -->
-      </div>
-    `);
-
-      // Oluşturulan kartı ürün listesine ekle
-      $("#productList").append(card);
+          <img src="${product.image}" alt="${product.title}">
+          <h4>${product.title.slice(0, 35)}...</h4>
+          <p><b>$${product.price}</b></p>
+          <button class="${classes.addToCartButton}">Add to Cart</button>
+          <button class="${classes.viewDetailButton}">Detail</button>
+        </div>`;
+      $(selectors.productList).append(card);
     });
   };
 
-  const renderCartModal = () => {
-    // Sepet modali için jQuery seçiciyle modal elementini alıyoruz
-    const modal = $("#cartModal");
-    // Modal içeriğini temizliyoruz ki eski ürünler kalmasın
+  // Sepet modalını render eder
+  self.renderCartModal = () => {
+    const modal = $(selectors.cartModal);
     modal.empty();
 
-    // LocalStorage'dan kaydedilmiş sepet verisini alıyoruz
-    // Eğer yoksa boş dizi olarak başlatıyoruz
     const saved = JSON.parse(localStorage.getItem("cart")) || [];
-
-    // Sepetin toplam fiyatını tutacak değişken
     let total = 0;
 
-    // Eğer sepet boşsa kullanıcıya ürün bulunamadığını gösteriyoruz
     if (saved.length === 0) {
       modal.append("<p>Product not found.</p>");
     } else {
-      // Sepetteki her ürün için işlemler
       saved.forEach(({ id, quantity }) => {
-        // Ürünü ürünler listesinden ID ile buluyoruz
-        const product = products.find((p) => p.id === id);
-
-        // Ürün bulunursa devam ediyoruz
+        const product = self.products.find((p) => p.id === id);
         if (product) {
-          // Ürün fiyatı ile adet çarpılarak ara toplam bulunur
           const subtotal = product.price * quantity;
-          // Ara toplam toplam fiyata eklenir
           total += subtotal;
 
-          // Modal içine sepetteki ürünü gösteren HTML eklenir
-          modal.append(`
-          <div class="cart-item-modal" data-id="${product.id}">
-            <img src="${product.image}">  <!-- Ürün resmi -->
-            <span>${quantity}x ${product.title.slice(
-            0,
-            15
-          )}...</span>  <!-- Ürün adı ve adet -->
-            <span>$${subtotal.toFixed(
-              2
-            )}</span>  <!-- Ürün ara toplam fiyatı -->
-            <button class="remove-item">Delete</button>  <!-- Ürünü sepetten çıkarma butonu -->
-          </div>
-        `);
+          modal.append(
+            `<div class="cart-item-modal" data-id="${product.id}">
+              <img src="${product.image}">
+              <span>${quantity}x ${product.title.slice(0, 15)}...</span>
+              <span>$${subtotal.toFixed(2)}</span>
+              <button class="${classes.removeItem}">Delete</button>
+            </div>`
+          );
         }
       });
 
-      // Tüm ürünlerin toplam fiyatını gösteriyoruz
       modal.append(`<div id="totalPrice">Toplam: $${total.toFixed(2)}</div>`);
-
-      // Sepeti tamamen temizlemek için bir buton ekliyoruz
-      modal.append(`<button id="clearCartBtn">Clear Cart</button>`);
+      modal.append(`<button id="${classes.clearCartBtn}">Clear Cart</button>`);
     }
   };
 
-  const setEvents = () => {
-    // Arama inputuna her yazı girişinde ürünleri filtrele ve göster
-    $("#searchInput").on("input", function () {
-      const query = $(this).val().toLowerCase();
-      renderProducts(query);
+  // Olay dinleyicilerini kurar
+  self.setEvents = () => {
+    $(document).on("input.eventListener", selectors.searchInput, function () {
+      const query = $(this).val();
+      self.renderProducts(query);
     });
 
-    // Ürün listesinde "Add to Cart" butonuna tıklanınca sepet işlemi
-    $("#productList").on("click", ".addToCart", function () {
-      // Tıklanan ürünün ID'sini al
-      const id = $(this).closest(".product-card").data("id");
+    $(document).on(
+      "click.eventListener",
+      selectors.addToCartButton,
+      function () {
+        const id = $(this).closest(selectors.productCard).data("id");
+        const existing = self.cart.find((item) => item.id === id);
 
-      // Sepette bu ürün varsa miktarını artır
-      const existing = cart.find((item) => item.id === id);
-      if (existing) {
-        existing.quantity++;
-      } else {
-        // Yoksa sepete yeni ürün olarak ekle
-        cart.push({ id: id, quantity: 1 });
-      }
-
-      // Güncel sepeti localStorage'a kaydet
-      localStorage.setItem("cart", JSON.stringify(cart));
-
-      // Sepete eklendi bilgisini gösteren popup oluştur ve göster
-      const popup = $(
-        '<div class="popup-message">Product added to cart</div>'
-      ).appendTo("body");
-      popup.animate({ opacity: 1 }, 300);
-      setTimeout(() => {
-        popup.fadeOut(300, () => popup.remove());
-      }, 1500);
-    });
-
-    // Ürün listesinde "Detail" butonuna tıklanınca detay modalını aç
-    $("#productList").on("click", ".viewDetail", function () {
-      // Tıklanan ürünün ID'sini al
-      const id = $(this).closest(".product-card").data("id");
-
-      // ID ile ürün bilgisini bul
-      const product = products.find((p) => p.id === id);
-
-      if (product) {
-        // Detay modalına ürün bilgilerini yaz
-        $("#detailModal").html(`
-        <h3>${product.title}</h3>
-        <img src="${product.image}" style="width:100%; max-height:150px; object-fit:contain">
-        <p>${product.description}</p>
-        <p><b>Price: $${product.price}</b></p>
-        <button id="closeDetail">Close</button>
-      `);
-
-        // Detay modalını ve overlayi göster (görünür yap)
-        $("#detailOverlay").fadeIn();
-        $("#detailModal").fadeIn();
-      }
-    });
-
-    // Detay modalındaki "Close" butonuna tıklanınca modalı kapat
-    $("body").on("click", "#closeDetail", function () {
-      $("#detailOverlay").fadeOut();
-      $("#detailModal").fadeOut();
-    });
-
-    // Sepet görüntüle butonuna tıklanınca sepet modalını aç
-    $("#viewCartBtn").on("click", function () {
-      renderCartModal();
-      $("#cartOverlay").fadeIn();
-      $("#cartModal").fadeIn();
-    });
-
-    // Sepet overlayine tıklanınca modalı kapat
-    $("#cartOverlay").on("click", function () {
-      $("#cartModal").fadeOut();
-      $("#cartOverlay").fadeOut();
-    });
-
-    // Sepet modalındaki "Delete" butonuna tıklanınca ilgili ürünü azalt veya çıkar
-    $("#cartModal").on("click", ".remove-item", function (e) {
-      e.stopPropagation(); // Tıklamanın modal dışına yayılmasını engelle
-
-      // Tıklanan ürünün ID'sini al
-      const id = $(this).closest(".cart-item-modal").data("id");
-
-      // Sepetteki ürünün indexini bul
-      const index = cart.findIndex((item) => item.id === id);
-
-      if (index > -1) {
-        // Ürün miktarını 1 azalt
-        cart[index].quantity--;
-
-        // Miktar 0 veya daha azsa ürünü tamamen çıkar
-        if (cart[index].quantity <= 0) {
-          cart.splice(index, 1);
+        if (existing) {
+          existing.quantity++;
+        } else {
+          self.cart.push({ id: id, quantity: 1 });
         }
 
-        // Güncel sepeti localStorage'a kaydet
-        localStorage.setItem("cart", JSON.stringify(cart));
+        localStorage.setItem("cart", JSON.stringify(self.cart));
+
+        const popup = $(
+          `<div class="${classes.popupMessage}">Product added to cart</div>`
+        ).appendTo("body");
+        popup.animate({ opacity: 1 }, 300);
+        setTimeout(() => {
+          popup.fadeOut(300, () => popup.remove());
+        }, 1500);
       }
+    );
 
-      // Sepet modalını güncelle
-      renderCartModal();
+    $(document).on(
+      "click.eventListener",
+      selectors.viewDetailButton,
+      function () {
+        const id = $(this).closest(selectors.productCard).data("id");
+        const product = self.products.find((p) => p.id === id);
+
+        if (product) {
+          $(selectors.detailModal).html(
+            `<h3>${product.title}</h3>
+          <img src="${product.image}" style="width:100%; max-height:150px; object-fit:contain">
+          <p>${product.description}</p>
+          <p><b>Price: $${product.price}</b></p>
+          <button id="${classes.closeDetail}">Close</button>`
+          );
+
+          $(selectors.overlay).fadeIn();
+          $(selectors.detailModal).fadeIn();
+        }
+      }
+    );
+
+    $(document).on("click.eventListener", selectors.closeDetail, function () {
+      $(selectors.overlay).fadeOut();
+      $(selectors.detailModal).fadeOut();
     });
 
-    // Sepet temizle butonuna tıklanınca sepeti tamamen boşalt
-    $("#cartModal").on("click", "#clearCartBtn", function () {
-      cart = [];
+    $(document).on("click.eventListener", selectors.viewCartBtn, function () {
+      self.renderCartModal();
+      $(selectors.overlay).fadeIn();
+      $(selectors.cartModal).fadeIn();
+    });
+
+    $(document).on("click.eventListener", selectors.overlay, function () {
+      $(selectors.cartModal).fadeOut();
+      $(selectors.overlay).fadeOut();
+    });
+
+    $(document).on("click.eventListener", selectors.removeItem, function (e) {
+      e.stopPropagation();
+      const id = $(this).closest(".cart-item-modal").data("id");
+      const index = self.cart.findIndex((item) => item.id === id);
+
+      if (index > -1) {
+        self.cart[index].quantity--;
+        if (self.cart[index].quantity <= 0) {
+          self.cart.splice(index, 1);
+        }
+        localStorage.setItem("cart", JSON.stringify(self.cart));
+      }
+      self.renderCartModal();
+    });
+
+    $(document).on("click.eventListener", selectors.clearCartBtn, function () {
+      self.cart = [];
       localStorage.removeItem("cart");
-      renderCartModal();
+      self.renderCartModal();
     });
   };
-  const init = async () => {
-    // Sayfa yapısını oluştur (HTML + CSS)
-    buildHTML();
 
-    // Ürün listesinin içine yükleniyor göstergesi (spinner) ekle
-    $("#productList").append('<div class="spinner"></div>');
-
-    // FakeStore API'den ürün verilerini JSON olarak çek (async await ile)
-    const data = await $.getJSON("https://fakestoreapi.com/products");
-
-    // Yüklenme tamamlandı, spinner'ı gizle
-    $(".spinner").hide();
-
-    // Çekilen ürünleri products dizisine ekle
-    products.push(...data);
-
-    // Daha önce localStorage'da kaydedilmiş sepeti getir veya boş dizi ata
-    cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-    // Ürünleri sayfada göster (render et)
-    renderProducts();
-
-    // Tüm buton, input gibi elementlere event (olay) dinleyicileri ekle
-    setEvents();
-  };
-
-  // Sayfa yüklendiğinde init fonksiyonunu çalıştır
-  await init();
+  // Sayfa yüklendiğinde başlat
+  $(document).ready(self.init);
 })(jQuery);
