@@ -42,7 +42,7 @@
     closeDetail: `#${classes.closeDetail}`,
     productList: "#productList",
     searchBar: "#searchBar",
-    appendLocation: "body", // HTML buraya eklenecek
+    appendLocation: "#container", // HTML buraya eklenecek
   };
 
   const self = {
